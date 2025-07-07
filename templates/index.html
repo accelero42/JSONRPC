@@ -67,6 +67,12 @@
             background: #4CAF50;
             color: white;
         }
+
+        .client-name-form {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
     </style>
 </head>
 <body>
@@ -93,28 +99,24 @@
     <table border="1" cellpadding="5" cellspacing="0">
         <tr>
             <th>Client</th>
-            <th>Current Stream</th>
             <th>Change Stream</th>
-            <th>Change Name</th>
             <th>Volume</th>
         </tr>
         {% for client in clients %}
         <tr>
-            <td>{{ client.name }}</td>
-            <td>{{ client.stream_id }}</td>
+            <td>
+                <form action="{{ url_for('change_name') }}" method="post" class="client-name-form">
+                    <input type="hidden" name="client_id" value="{{ client.id }}">
+                    <input type="text" name="name" value="{{ client.name }}">
+                    <button type="submit">Rename</button>
+                </form>
+            </td>
             <td class="stream-buttons">
                 <form action="{{ url_for('change_stream') }}" method="post">
                     <input type="hidden" name="group_id" value="{{ client.group_id }}">
                     {% for stream in streams %}
                         <button type="submit" name="stream_id" value="{{ stream.id }}" class="{% if stream.id == client.stream_id %}selected{% endif %}">{{ stream.id }}</button>
                     {% endfor %}
-                </form>
-            </td>
-            <td>
-                <form action="{{ url_for('change_name') }}" method="post">
-                    <input type="hidden" name="client_id" value="{{ client.id }}">
-                    <input type="text" name="name" value="{{ client.name }}">
-                    <input type="submit" value="Rename">
                 </form>
             </td>
             <td>
@@ -129,13 +131,13 @@
         <tr>
             <th>Stream</th>
             <th>Status</th>
-            <th>Source</th>
+            <th>Current Song</th>
         </tr>
         {% for stream in streams %}
         <tr>
             <td>{{ stream.id }}</td>
             <td>{{ stream.status }}</td>
-            <td>{{ stream.uri.raw }}</td>
+            <td>{{ stream.current_song }}</td>
         </tr>
         {% endfor %}
     </table>
