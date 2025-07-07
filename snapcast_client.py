@@ -1,6 +1,6 @@
 import json
 import os
-import requests
+import websocket
 
 class SnapcastRPCClient:
     def __init__(self, host=None, port=None, timeout=None):
@@ -16,8 +16,7 @@ class SnapcastRPCClient:
         port = int(port or os.environ.get("SNAPCAST_PORT", 1780))
         self.timeout = float(timeout or os.environ.get("SNAPCAST_TIMEOUT", 10))
 
-        self.url = f"http://{host}:{port}/jsonrpc"
-        self.session = requests.Session()
+        self.url = f"ws://{host}:{port}/jsonrpc"
         self.request_id = 0
 
     def call(self, method, params=None):
@@ -30,17 +29,19 @@ class SnapcastRPCClient:
         if params is not None:
             payload["params"] = params
         try:
-            response = self.session.post(
-                self.url,
-                json=payload,
-                headers={"Content-Type": "application/json", "Accept": "application/json"},
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-        except requests.RequestException as exc:
+            ws = websocket.create_connection(self.url, timeout=self.timeout)
+            ws.send(json.dumps(payload))
+            ws.settimeout(self.timeout)
+            response = ws.recv()
+        except websocket.WebSocketException as exc:
             raise RuntimeError(f"RPC request failed: {exc}") from exc
+        finally:
+            try:
+                ws.close()
+            except Exception:
+                pass
         try:
-            data = response.json()
+            data = json.loads(response)
         except json.JSONDecodeError as exc:
             raise RuntimeError("Invalid JSON response") from exc
         if "error" in data:
