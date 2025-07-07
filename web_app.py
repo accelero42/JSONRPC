@@ -1,11 +1,40 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import os
+import json
+import urllib.parse
+import urllib.request
 from snapcast_client import SnapcastRPCClient
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 client = SnapcastRPCClient()
+
+album_art_cache = {}
+
+
+def fetch_album_art(artist, album):
+    key = (artist, album)
+    if key in album_art_cache:
+        return album_art_cache[key]
+    try:
+        search_url = (
+            "https://musicbrainz.org/ws/2/release/?query=artist:%s%%20AND%%20release:%s&fmt=json&limit=1"
+            % (urllib.parse.quote(artist), urllib.parse.quote(album))
+        )
+        req = urllib.request.Request(
+            search_url,
+            headers={"User-Agent": "AudioBrane/1.0 ( https://example.com )"},
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.load(resp)
+        release_id = data["releases"][0]["id"]
+        cover_url = f"https://coverartarchive.org/release/{release_id}/front-250"
+        album_art_cache[key] = cover_url
+        return cover_url
+    except Exception:
+        album_art_cache[key] = None
+        return None
 
 @app.route('/')
 def index():
@@ -18,8 +47,19 @@ def index():
     streams = status.get('server', {}).get('streams', [])
     for stream in streams:
         metadata = stream.get('metadata', {})
-        song = metadata.get('title') or metadata.get('name') or metadata.get('file', '')
-        stream['current_song'] = song
+        title = metadata.get('title') or metadata.get('name') or metadata.get('file', '')
+        artist = metadata.get('artist')
+        if isinstance(artist, list):
+            artist = ", ".join(artist)
+        album = metadata.get('album')
+        stream['title'] = title
+        stream['artist'] = artist
+        stream['album'] = album
+        stream['current_song'] = title
+        if artist and album:
+            stream['album_art'] = fetch_album_art(artist, album)
+        else:
+            stream['album_art'] = None
     groups = status.get('server', {}).get('groups', [])
 
     # Flatten clients with group, stream and volume info
@@ -100,6 +140,23 @@ def set_volume():
     except Exception as exc:
         flash(f'Error setting volume: {exc}')
     return redirect(url_for('index'))
+
+
+@app.route('/stream_control', methods=['POST'])
+def stream_control():
+    stream_id = request.form.get('stream_id')
+    command = request.form.get('command')
+    if not stream_id or not command:
+        return 'Invalid request', 400
+    try:
+        client.call('Stream.Control', {
+            'id': stream_id,
+            'command': command,
+            'params': {}
+        })
+    except Exception as exc:
+        return f'Error: {exc}', 500
+    return 'ok'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
