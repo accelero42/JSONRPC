@@ -54,6 +54,21 @@ def change_stream():
     return redirect(url_for('index'))
 
 
+@app.route('/change_name', methods=['POST'])
+def change_name():
+    client_id = request.form.get('client_id')
+    name = request.form.get('name')
+    if not client_id or name is None:
+        flash('Invalid request')
+        return redirect(url_for('index'))
+    try:
+        client.call('Client.SetName', {'id': client_id, 'name': name})
+        flash(f'Name changed to {name} for {client_id}')
+    except Exception as exc:
+        flash(f'Error setting name: {exc}')
+    return redirect(url_for('index'))
+
+
 @app.route('/set_volume', methods=['POST'])
 def set_volume():
     client_id = request.form.get('client_id')
