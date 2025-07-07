@@ -8,7 +8,7 @@ from snapcast_client import SnapcastRPCClient
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+log_level = os.environ.get("LOG_LEVEL", "DEBUG").upper()
 logging.basicConfig(
     level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s %(levelname)s: %(message)s'
