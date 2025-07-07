@@ -17,14 +17,22 @@ def index():
     streams = status.get('server', {}).get('streams', [])
     groups = status.get('server', {}).get('groups', [])
 
-    # Flatten clients with group and stream info
+    # Flatten clients with group, stream and volume info
     clients = []
     for group in groups:
         stream_id = group.get('stream_id')
         group_id = group.get('id')
         for c in group.get('clients', []):
             name = c.get('config', {}).get('name') or c.get('host', {}).get('name') or c.get('id')
-            clients.append({'id': c.get('id'), 'name': name, 'group_id': group_id, 'stream_id': stream_id})
+            volume_cfg = c.get('config', {}).get('volume', {})
+            clients.append({
+                'id': c.get('id'),
+                'name': name,
+                'group_id': group_id,
+                'stream_id': stream_id,
+                'volume_percent': volume_cfg.get('percent'),
+                'volume_muted': volume_cfg.get('muted'),
+            })
     return render_template('index.html', clients=clients, streams=streams)
 
 @app.route('/change_stream', methods=['POST'])
@@ -39,6 +47,35 @@ def change_stream():
         flash(f'Stream changed to {stream_id} for group {group_id}')
     except Exception as exc:
         flash(f'Error setting stream: {exc}')
+    return redirect(url_for('index'))
+
+
+@app.route('/set_volume', methods=['POST'])
+def set_volume():
+    client_id = request.form.get('client_id')
+    volume = request.form.get('volume')
+    if client_id is None or volume is None:
+        flash('Invalid request')
+        return redirect(url_for('index'))
+
+    try:
+        volume_val = int(volume)
+    except ValueError:
+        flash('Invalid volume value')
+        return redirect(url_for('index'))
+
+    params = {
+        'id': client_id,
+        'volume': {
+            'muted': volume_val == 0,
+            'percent': volume_val,
+        },
+    }
+    try:
+        client.call('Client.SetVolume', params)
+        flash(f'Volume set to {volume_val}% for {client_id}')
+    except Exception as exc:
+        flash(f'Error setting volume: {exc}')
     return redirect(url_for('index'))
 
 if __name__ == '__main__':

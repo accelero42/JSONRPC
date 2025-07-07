@@ -14,11 +14,21 @@
         </ul>
       {% endif %}
     {% endwith %}
+    <style>
+        .volume-buttons button {
+            margin: 0 2px;
+        }
+        .volume-buttons .active {
+            background-color: #007bff;
+            color: #fff;
+        }
+    </style>
     <table border="1" cellpadding="5" cellspacing="0">
         <tr>
             <th>Client</th>
             <th>Current Stream</th>
             <th>Change Stream</th>
+            <th>Volume</th>
         </tr>
         {% for client in clients %}
         <tr>
@@ -33,6 +43,16 @@
                         {% endfor %}
                     </select>
                     <input type="submit" value="Set">
+                </form>
+            </td>
+            <td>
+                <form action="{{ url_for('set_volume') }}" method="post" class="volume-buttons">
+                    <input type="hidden" name="client_id" value="{{ client.id }}">
+                    <button type="submit" name="volume" value="0" class="{% if client.volume_muted or client.volume_percent == 0 %}active{% endif %}">Mute</button>
+                    <button type="submit" name="volume" value="25" class="{% if client.volume_percent == 25 and not client.volume_muted %}active{% endif %}">25%</button>
+                    <button type="submit" name="volume" value="50" class="{% if client.volume_percent == 50 and not client.volume_muted %}active{% endif %}">50%</button>
+                    <button type="submit" name="volume" value="75" class="{% if client.volume_percent == 75 and not client.volume_muted %}active{% endif %}">75%</button>
+                    <button type="submit" name="volume" value="100" class="{% if client.volume_percent == 100 and not client.volume_muted %}active{% endif %}">100%</button>
                 </form>
             </td>
         </tr>
