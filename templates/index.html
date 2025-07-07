@@ -69,6 +69,33 @@
             color: white;
         }
 
+        .rename-icon {
+            cursor: pointer;
+            margin-left: 6px;
+        }
+
+        #renameModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+        }
+
+        #renameModal .modal-content {
+            background: #fff;
+            padding: 20px;
+            max-width: 300px;
+            margin: 100px auto;
+            border-radius: 4px;
+        }
+
+        #renameModal button {
+            margin-right: 5px;
+        }
+
     </style>
 </head>
 <body>
@@ -102,7 +129,7 @@
         <tr>
             <td>
                 {{ client.name }}
-                <button type="button" onclick="renameClient('{{ client.id }}', '{{ client.name }}')">Rename</button>
+                <span class="rename-icon" title="Rename" onclick="openRenameModal('{{ client.id }}', '{{ client.name }}')">\u270E</span>
             </td>
             <td class="stream-buttons">
                 <form action="{{ url_for('change_stream') }}" method="post">
@@ -118,6 +145,18 @@
         </tr>
         {% endfor %}
     </table>
+
+    <div id="renameModal">
+        <div class="modal-content">
+            <label>New name:
+                <input type="text" id="renameInput">
+            </label>
+            <div>
+                <button type="button" id="renameSave">Save</button>
+                <button type="button" onclick="closeRenameModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
 
 
 
@@ -143,13 +182,30 @@
             slider.addEventListener('touchend', sendVolume);
         });
 
-        function renameClient(clientId, currentName) {
-            var newName = prompt('Enter new name', currentName);
-            if (newName === null) {
+        var renameModal = document.getElementById('renameModal');
+        var renameInput = document.getElementById('renameInput');
+        var renameSave = document.getElementById('renameSave');
+        var renameClientId = null;
+
+        function openRenameModal(clientId, currentName) {
+            renameClientId = clientId;
+            renameInput.value = currentName;
+            renameModal.style.display = 'block';
+            renameInput.focus();
+        }
+
+        function closeRenameModal() {
+            renameModal.style.display = 'none';
+        }
+
+        function saveRename() {
+            var newName = renameInput.value;
+            if (renameClientId === null) {
+                closeRenameModal();
                 return;
             }
             var params = new URLSearchParams();
-            params.append('client_id', clientId);
+            params.append('client_id', renameClientId);
             params.append('name', newName);
             fetch('{{ url_for('change_name') }}', {
                 method: 'POST',
@@ -161,6 +217,13 @@
                 window.location.reload();
             });
         }
+
+        renameSave.addEventListener('click', saveRename);
+        renameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                saveRename();
+            }
+        });
 
     </script>
 </body>
