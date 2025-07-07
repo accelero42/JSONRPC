@@ -129,7 +129,8 @@
         <tr>
             <td>
                 {{ client.name }}
-                <span class="rename-icon" title="Rename" onclick="openRenameModal('{{ client.id }}', '{{ client.name }}')">\u270E</span>
+                <span class="rename-icon" title="Rename"
+                      onclick="openRenameModal('{{ client.id|escapejs }}', '{{ client.name|escapejs }}')">&#x270E;</span>
             </td>
             <td class="stream-buttons">
                 <form action="{{ url_for('change_stream') }}" method="post">
