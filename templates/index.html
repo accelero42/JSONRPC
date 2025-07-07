@@ -58,6 +58,15 @@
         .settings {
             margin-bottom: 20px;
         }
+
+        .stream-buttons button {
+            margin: 2px;
+        }
+
+        .stream-buttons button.selected {
+            background: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -86,26 +95,47 @@
             <th>Client</th>
             <th>Current Stream</th>
             <th>Change Stream</th>
+            <th>Change Name</th>
             <th>Volume</th>
         </tr>
         {% for client in clients %}
         <tr>
             <td>{{ client.name }}</td>
             <td>{{ client.stream_id }}</td>
-            <td>
+            <td class="stream-buttons">
                 <form action="{{ url_for('change_stream') }}" method="post">
                     <input type="hidden" name="group_id" value="{{ client.group_id }}">
-                    <select name="stream_id">
-                        {% for stream in streams %}
-                            <option value="{{ stream.id }}" {% if stream.id == client.stream_id %}selected{% endif %}>{{ stream.id }}</option>
-                        {% endfor %}
-                    </select>
-                    <input type="submit" value="Set">
+                    {% for stream in streams %}
+                        <button type="submit" name="stream_id" value="{{ stream.id }}" class="{% if stream.id == client.stream_id %}selected{% endif %}">{{ stream.id }}</button>
+                    {% endfor %}
+                </form>
+            </td>
+            <td>
+                <form action="{{ url_for('change_name') }}" method="post">
+                    <input type="hidden" name="client_id" value="{{ client.id }}">
+                    <input type="text" name="name" value="{{ client.name }}">
+                    <input type="submit" value="Rename">
                 </form>
             </td>
             <td>
                 <input type="range" min="0" max="100" step="1" class="volume-slider" data-client="{{ client.id }}" value="{% if client.volume_muted %}0{% else %}{{ client.volume_percent }}{% endif %}">
             </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Streams</h2>
+    <table border="1" cellpadding="5" cellspacing="0">
+        <tr>
+            <th>Stream</th>
+            <th>Status</th>
+            <th>Source</th>
+        </tr>
+        {% for stream in streams %}
+        <tr>
+            <td>{{ stream.id }}</td>
+            <td>{{ stream.status }}</td>
+            <td>{{ stream.uri.raw }}</td>
         </tr>
         {% endfor %}
     </table>
