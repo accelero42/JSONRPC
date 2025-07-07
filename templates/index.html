@@ -15,12 +15,8 @@
       {% endif %}
     {% endwith %}
     <style>
-        .volume-buttons button {
-            margin: 0 2px;
-        }
-        .volume-buttons .active {
-            background-color: #007bff;
-            color: #fff;
+        .volume-slider {
+            width: 120px;
         }
     </style>
     <table border="1" cellpadding="5" cellspacing="0">
@@ -46,17 +42,33 @@
                 </form>
             </td>
             <td>
-                <form action="{{ url_for('set_volume') }}" method="post" class="volume-buttons">
-                    <input type="hidden" name="client_id" value="{{ client.id }}">
-                    <button type="submit" name="volume" value="0" class="{% if client.volume_muted or client.volume_percent == 0 %}active{% endif %}">Mute</button>
-                    <button type="submit" name="volume" value="25" class="{% if client.volume_percent == 25 and not client.volume_muted %}active{% endif %}">25%</button>
-                    <button type="submit" name="volume" value="50" class="{% if client.volume_percent == 50 and not client.volume_muted %}active{% endif %}">50%</button>
-                    <button type="submit" name="volume" value="75" class="{% if client.volume_percent == 75 and not client.volume_muted %}active{% endif %}">75%</button>
-                    <button type="submit" name="volume" value="100" class="{% if client.volume_percent == 100 and not client.volume_muted %}active{% endif %}">100%</button>
-                </form>
+                <input type="range" min="0" max="100" step="1" class="volume-slider" data-client="{{ client.id }}" value="{% if client.volume_muted %}0{% else %}{{ client.volume_percent }}{% endif %}">
             </td>
         </tr>
         {% endfor %}
     </table>
+
+    <script>
+        document.querySelectorAll('.volume-slider').forEach(function(slider) {
+            var clientId = slider.dataset.client;
+            var postUrl = '{{ url_for('set_volume') }}';
+            function sendVolume() {
+                var params = new URLSearchParams();
+                params.append('client_id', clientId);
+                params.append('volume', slider.value);
+                fetch(postUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params.toString()
+                }).then(function() {
+                    window.location.reload();
+                });
+            }
+            slider.addEventListener('mouseup', sendVolume);
+            slider.addEventListener('touchend', sendVolume);
+        });
+    </script>
 </body>
 </html>
