@@ -1,10 +1,77 @@
 <!doctype html>
 <html>
 <head>
-    <title>Snapcast Clients</title>
+    <meta charset="utf-8">
+    <title>AudioBrane</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .logo {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .logo img.brain {
+            width: 80px;
+            height: auto;
+        }
+
+        .logo img.notes {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 40px;
+            height: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+        }
+
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background: #f0f0f0;
+            text-align: left;
+        }
+
+        .volume-slider {
+            width: 120px;
+        }
+
+        .settings {
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Snapcast Clients</h1>
+    <div class="logo">
+        <img class="brain" src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f9e0.svg" alt="brain">
+        <img class="notes" src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f3b5.svg" alt="music notes">
+    </div>
+    <h1>AudioBrane</h1>
+    <form class="settings" method="get">
+        <label>
+            <input type="checkbox" name="show_disconnected" value="1" {% if show_disconnected %}checked{% endif %}> Show disconnected clients
+        </label>
+        <button type="submit">Apply</button>
+    </form>
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <ul>
@@ -14,11 +81,6 @@
         </ul>
       {% endif %}
     {% endwith %}
-    <style>
-        .volume-slider {
-            width: 120px;
-        }
-    </style>
     <table border="1" cellpadding="5" cellspacing="0">
         <tr>
             <th>Client</th>
