@@ -5,13 +5,13 @@ This repository contains a simple Python client for the Snapcast JSON-RPC contro
 ## Requirements
 
 - Python 3.11+
-- `requests` library (`pip install requests`)
+- `websocket-client` (`pip install websocket-client`)
 - `Flask` (`pip install Flask`)
 
 ## Command Line Usage
 
 The script `snapcast_client.py` connects to the Snapcast server (defaults to
-`192.168.1.70:1780`) and calls `Server.GetStatus` via HTTP JSON-RPC.  Host,
+`192.168.1.70:1780`) and calls `Server.GetStatus` using WebSocket JSON-RPC.  Host,
 port and request timeout can be changed with the environment variables
 `SNAPCAST_HOST`, `SNAPCAST_PORT` and `SNAPCAST_TIMEOUT` respectively.
 The resulting JSON is printed to the console.
