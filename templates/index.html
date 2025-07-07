@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+    <title>Snapcast Clients</title>
+</head>
+<body>
+    <h1>Snapcast Clients</h1>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <table border="1" cellpadding="5" cellspacing="0">
+        <tr>
+            <th>Client</th>
+            <th>Current Stream</th>
+            <th>Change Stream</th>
+        </tr>
+        {% for client in clients %}
+        <tr>
+            <td>{{ client.name }}</td>
+            <td>{{ client.stream_id }}</td>
+            <td>
+                <form action="{{ url_for('change_stream') }}" method="post">
+                    <input type="hidden" name="group_id" value="{{ client.group_id }}">
+                    <select name="stream_id">
+                        {% for stream in streams %}
+                            <option value="{{ stream.id }}" {% if stream.id == client.stream_id %}selected{% endif %}>{{ stream.id }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="submit" value="Set">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
