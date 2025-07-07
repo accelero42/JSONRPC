@@ -51,6 +51,43 @@
             text-align: left;
         }
 
+        .streams-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .stream-tile {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 220px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stream-tile img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stream-tile .controls button {
+            margin-right: 5px;
+        }
+
+        .no-art {
+            width: 200px;
+            height: 200px;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+            color: #999;
+        }
+
         .volume-slider {
             width: 120px;
         }
@@ -127,20 +164,27 @@
     </table>
 
     <h2>Streams</h2>
-    <table border="1" cellpadding="5" cellspacing="0">
-        <tr>
-            <th>Stream</th>
-            <th>Status</th>
-            <th>Current Song</th>
-        </tr>
+    <div class="streams-container">
         {% for stream in streams %}
-        <tr>
-            <td>{{ stream.id }}</td>
-            <td>{{ stream.status }}</td>
-            <td>{{ stream.current_song }}</td>
-        </tr>
+        <div class="stream-tile">
+            {% if stream.album_art %}
+            <img src="{{ stream.album_art }}" alt="Album Art">
+            {% else %}
+            <div class="no-art">No Art</div>
+            {% endif %}
+            <h3>{{ stream.id }}</h3>
+            <p>Status: {{ stream.status }}</p>
+            {% if stream.title %}<p>{{ stream.title }}</p>{% endif %}
+            {% if stream.artist %}<p>Artist: {{ stream.artist }}</p>{% endif %}
+            {% if stream.album %}<p>Album: {{ stream.album }}</p>{% endif %}
+            <div class="controls">
+                <button data-stream="{{ stream.id }}" data-command="previous">Prev</button>
+                <button data-stream="{{ stream.id }}" data-command="playPause">Play/Pause</button>
+                <button data-stream="{{ stream.id }}" data-command="next">Next</button>
+            </div>
+        </div>
         {% endfor %}
-    </table>
+    </div>
 
     <script>
         document.querySelectorAll('.volume-slider').forEach(function(slider) {
@@ -162,6 +206,23 @@
             }
             slider.addEventListener('mouseup', sendVolume);
             slider.addEventListener('touchend', sendVolume);
+        });
+
+        document.querySelectorAll('.stream-tile .controls button').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var params = new URLSearchParams();
+                params.append('stream_id', btn.dataset.stream);
+                params.append('command', btn.dataset.command);
+                fetch('{{ url_for('stream_control') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params.toString()
+                }).then(function() {
+                    window.location.reload();
+                });
+            });
         });
     </script>
 </body>
