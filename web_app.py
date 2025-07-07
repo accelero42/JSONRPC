@@ -8,8 +8,11 @@ from snapcast_client import SnapcastRPCClient
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-logging.basicConfig(level=logging.WARNING,
-                    format='%(asctime)s %(levelname)s: %(message)s')
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s %(levelname)s: %(message)s'
+)
 
 client = SnapcastRPCClient()
 
@@ -19,8 +22,10 @@ album_art_cache = {}
 def fetch_album_art(artist, album):
     key = (artist, album)
     if key in album_art_cache:
+        logging.debug("Album art cache hit for %s - %s", artist, album)
         return album_art_cache[key]
     try:
+        logging.info("Fetching album art for %s - %s", artist, album)
         search_url = (
             "https://musicbrainz.org/ws/2/release/?query=artist:%s%%20AND%%20release:%s&fmt=json&limit=1"
             % (urllib.parse.quote(artist), urllib.parse.quote(album))
@@ -31,14 +36,17 @@ def fetch_album_art(artist, album):
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.load(resp)
+        logging.debug("MusicBrainz response for %s - %s: %s", artist, album, data)
         if not data.get("releases"):
+            logging.warning("No releases found for %s - %s", artist, album)
             album_art_cache[key] = None
             return None
         release_id = data["releases"][0]["id"]
         cover_url = f"https://coverartarchive.org/release/{release_id}/front-250"
         album_art_cache[key] = cover_url
         return cover_url
-    except Exception:
+    except Exception as exc:
+        logging.warning("Failed to fetch album art for %s - %s: %s", artist, album, exc)
         album_art_cache[key] = None
         return None
 
@@ -46,13 +54,17 @@ def fetch_album_art(artist, album):
 def index():
     show_disconnected = request.args.get('show_disconnected') == '1'
     try:
+        logging.info("Fetching Snapcast status")
         status = client.call('Server.GetStatus')
+        logging.debug("Snapcast status: %s", status)
     except Exception as exc:
         return f'Error fetching status: {exc}', 500
 
     streams = status.get('server', {}).get('streams', [])
     for stream in streams:
+        logging.info("Processing stream %s", stream.get('id'))
         metadata = stream.get('metadata', {})
+        logging.debug("Raw metadata for %s: %s", stream.get('id'), metadata)
         title = metadata.get('title') or metadata.get('name') or metadata.get('file', '')
         artist = metadata.get('artist')
         if isinstance(artist, list):
@@ -67,12 +79,16 @@ def index():
         stream['current_song'] = title
 
         if art_url:
+            logging.debug("Using provided artUrl for %s", stream.get('id'))
             stream['album_art'] = art_url
         elif art_data.get('data') and art_data.get('extension'):
+            logging.debug("Using embedded artData for %s", stream.get('id'))
             stream['album_art'] = f"data:image/{art_data['extension']};base64,{art_data['data']}"
         elif artist and album:
+            logging.debug("Trying to fetch album art for %s from external service", stream.get('id'))
             stream['album_art'] = fetch_album_art(artist, album)
         else:
+            logging.debug("No album art available for %s", stream.get('id'))
             stream['album_art'] = None
     groups = status.get('server', {}).get('groups', [])
 
