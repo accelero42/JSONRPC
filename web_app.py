@@ -9,6 +9,7 @@ client = SnapcastRPCClient()
 
 @app.route('/')
 def index():
+    show_disconnected = request.args.get('show_disconnected') == '1'
     try:
         status = client.call('Server.GetStatus')
     except Exception as exc:
@@ -23,6 +24,9 @@ def index():
         stream_id = group.get('stream_id')
         group_id = group.get('id')
         for c in group.get('clients', []):
+            connected = c.get('connected', True)
+            if not show_disconnected and not connected:
+                continue
             name = c.get('config', {}).get('name') or c.get('host', {}).get('name') or c.get('id')
             volume_cfg = c.get('config', {}).get('volume', {})
             clients.append({
@@ -33,7 +37,7 @@ def index():
                 'volume_percent': volume_cfg.get('percent'),
                 'volume_muted': volume_cfg.get('muted'),
             })
-    return render_template('index.html', clients=clients, streams=streams)
+    return render_template('index.html', clients=clients, streams=streams, show_disconnected=show_disconnected)
 
 @app.route('/change_stream', methods=['POST'])
 def change_stream():

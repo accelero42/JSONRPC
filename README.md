@@ -41,4 +41,6 @@ python3 web_app.py
 
 Visit `http://localhost:5000` in your browser. The page lists all clients with the stream they are currently connected to. A drop-down allows selecting a different stream for each client.
 
+The interface, now titled **AudioBrane**, features a simple illustration of a brain with musical notes. A checkbox lets you hide clients that are not connected.
+
 The API reference is available at <https://github.com/badaix/snapcast/blob/develop/doc/json_rpc_api/control.md>.
