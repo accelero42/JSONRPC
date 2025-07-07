@@ -29,7 +29,7 @@ class SnapcastRPCClient:
         }
         if params is not None:
             payload["params"] = params
-        logging.info("Sending RPC payload: %s", payload)
+        logging.debug("Sending RPC payload: %s", payload)
         try:
             ws = websocket.create_connection(self.url, timeout=self.timeout)
             ws.send(json.dumps(payload))
@@ -46,7 +46,7 @@ class SnapcastRPCClient:
             data = json.loads(response)
         except json.JSONDecodeError as exc:
             raise RuntimeError("Invalid JSON response") from exc
-        logging.info("RPC response: %s", data)
+        logging.debug("RPC response: %s", data)
         if "error" in data:
             raise RuntimeError(f"RPC error: {data['error']}")
         return data.get("result")

@@ -8,7 +8,8 @@ from snapcast_client import SnapcastRPCClient
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+logging.basicConfig(level=logging.WARNING,
+                    format='%(asctime)s %(levelname)s: %(message)s')
 
 client = SnapcastRPCClient()
 
@@ -24,8 +25,15 @@ def fetch_album_art(artist, album):
             "https://musicbrainz.org/ws/2/release/?query=artist:%s%%20AND%%20release:%s&fmt=json&limit=1"
             % (urllib.parse.quote(artist), urllib.parse.quote(album))
         )
-        with urllib.request.urlopen(search_url, timeout=5) as resp:
+        req = urllib.request.Request(
+            search_url,
+            headers={"User-Agent": "AudioBrane/1.0 (contact@example.com)"},
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.load(resp)
+        if not data.get("releases"):
+            album_art_cache[key] = None
+            return None
         release_id = data["releases"][0]["id"]
         cover_url = f"https://coverartarchive.org/release/{release_id}/front-250"
         album_art_cache[key] = cover_url
@@ -140,21 +148,6 @@ def set_volume():
     return redirect(url_for('index'))
 
 
-@app.route('/stream_control', methods=['POST'])
-def stream_control():
-    stream_id = request.form.get('stream_id')
-    command = request.form.get('command')
-    app.logger.info('stream_control POST: stream_id=%s command=%s', stream_id, command)
-    if not stream_id or not command:
-        app.logger.warning('Invalid stream_control request')
-        return 'Invalid request', 400
-    try:
-        result = client.call('Stream.Control', {'id': stream_id, 'command': command})
-        app.logger.info('Stream.Control result: %s', result)
-    except Exception as exc:
-        app.logger.exception('Stream.Control failed')
-        return f'Error: {exc}', 500
-    return 'ok'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

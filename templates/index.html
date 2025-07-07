@@ -73,9 +73,6 @@
             margin-bottom: 5px;
         }
 
-        .stream-tile .controls button {
-            margin-right: 5px;
-        }
 
         .no-art {
             width: 200px;
@@ -177,11 +174,7 @@
             {% if stream.title %}<p>{{ stream.title }}</p>{% endif %}
             {% if stream.artist %}<p>Artist: {{ stream.artist }}</p>{% endif %}
             {% if stream.album %}<p>Album: {{ stream.album }}</p>{% endif %}
-            <div class="controls">
-                <button data-stream="{{ stream.id }}" data-command="previous">Prev</button>
-                <button data-stream="{{ stream.id }}" data-command="playPause">Play/Pause</button>
-                <button data-stream="{{ stream.id }}" data-command="next">Next</button>
-            </div>
+            
         </div>
         {% endfor %}
     </div>
@@ -208,22 +201,6 @@
             slider.addEventListener('touchend', sendVolume);
         });
 
-        document.querySelectorAll('.stream-tile .controls button').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var params = new URLSearchParams();
-                params.append('stream_id', btn.dataset.stream);
-                params.append('command', btn.dataset.command);
-                fetch('{{ url_for('stream_control') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: params.toString()
-                }).then(function() {
-                    window.location.reload();
-                });
-            });
-        });
     </script>
 </body>
 </html>
