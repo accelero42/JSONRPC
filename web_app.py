@@ -3,10 +3,12 @@ import os
 import json
 import urllib.parse
 import urllib.request
+import logging
 from snapcast_client import SnapcastRPCClient
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
 client = SnapcastRPCClient()
 
@@ -142,11 +144,15 @@ def set_volume():
 def stream_control():
     stream_id = request.form.get('stream_id')
     command = request.form.get('command')
+    app.logger.info('stream_control POST: stream_id=%s command=%s', stream_id, command)
     if not stream_id or not command:
+        app.logger.warning('Invalid stream_control request')
         return 'Invalid request', 400
     try:
-        client.call('Stream.Control', {'id': stream_id, 'command': command})
+        result = client.call('Stream.Control', {'id': stream_id, 'command': command})
+        app.logger.info('Stream.Control result: %s', result)
     except Exception as exc:
+        app.logger.exception('Stream.Control failed')
         return f'Error: {exc}', 500
     return 'ok'
 
