@@ -1,8 +1,21 @@
 import json
+import os
 import requests
 
 class SnapcastRPCClient:
-    def __init__(self, host="192.168.1.70", port=1780):
+    def __init__(self, host=None, port=None, timeout=None):
+        """Create a new RPC client.
+
+        Parameters can be provided explicitly or via the environment
+        variables ``SNAPCAST_HOST``, ``SNAPCAST_PORT`` and
+        ``SNAPCAST_TIMEOUT``. If not specified, reasonable defaults are
+        used. ``timeout`` controls the total request timeout in seconds.
+        """
+
+        host = host or os.environ.get("SNAPCAST_HOST", "192.168.1.70")
+        port = int(port or os.environ.get("SNAPCAST_PORT", 1780))
+        self.timeout = float(timeout or os.environ.get("SNAPCAST_TIMEOUT", 10))
+
         self.url = f"http://{host}:{port}/jsonrpc"
         self.session = requests.Session()
         self.request_id = 0
@@ -21,7 +34,7 @@ class SnapcastRPCClient:
                 self.url,
                 json=payload,
                 headers={"Content-Type": "application/json", "Accept": "application/json"},
-                timeout=5,
+                timeout=self.timeout,
             )
             response.raise_for_status()
         except requests.RequestException as exc:
