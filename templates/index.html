@@ -51,45 +51,6 @@
             text-align: left;
         }
 
-        .streams-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .stream-tile {
-            background: white;
-            border: 1px solid #ccc;
-            padding: 10px;
-            width: 320px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .stream-tile img {
-            width: 300px;
-            height: 300px;
-            object-fit: cover;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-
-        .no-art {
-            width: 300px;
-            height: 300px;
-            background: #eee;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 5px;
-            color: #999;
-        }
-
-        .metadata {
-            font-size: 12px;
-            white-space: pre-wrap;
-            overflow-x: auto;
-        }
 
         .volume-slider {
             width: 120px;
@@ -108,11 +69,6 @@
             color: white;
         }
 
-        .client-name-form {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
     </style>
 </head>
 <body>
@@ -145,11 +101,8 @@
         {% for client in clients %}
         <tr>
             <td>
-                <form action="{{ url_for('change_name') }}" method="post" class="client-name-form">
-                    <input type="hidden" name="client_id" value="{{ client.id }}">
-                    <input type="text" name="name" value="{{ client.name }}">
-                    <button type="submit">Rename</button>
-                </form>
+                {{ client.name }}
+                <button type="button" onclick="renameClient('{{ client.id }}', '{{ client.name }}')">Rename</button>
             </td>
             <td class="stream-buttons">
                 <form action="{{ url_for('change_stream') }}" method="post">
@@ -166,25 +119,7 @@
         {% endfor %}
     </table>
 
-    <h2>Streams</h2>
-    <div class="streams-container">
-        {% for stream in streams %}
-        <div class="stream-tile">
-            {% if stream.album_art %}
-            <img src="{{ stream.album_art }}" alt="Album Art">
-            {% else %}
-            <div class="no-art">No Art</div>
-            {% endif %}
-            <h3>{{ stream.id }}</h3>
-            <p>Status: {{ stream.status }}</p>
-            {% if stream.title %}<p>{{ stream.title }}</p>{% endif %}
-            {% if stream.artist %}<p>Artist: {{ stream.artist }}</p>{% endif %}
-            {% if stream.album %}<p>Album: {{ stream.album }}</p>{% endif %}
-            <pre class="metadata">{{ stream.raw_metadata }}</pre>
 
-        </div>
-        {% endfor %}
-    </div>
 
     <script>
         document.querySelectorAll('.volume-slider').forEach(function(slider) {
@@ -207,6 +142,25 @@
             slider.addEventListener('mouseup', sendVolume);
             slider.addEventListener('touchend', sendVolume);
         });
+
+        function renameClient(clientId, currentName) {
+            var newName = prompt('Enter new name', currentName);
+            if (newName === null) {
+                return;
+            }
+            var params = new URLSearchParams();
+            params.append('client_id', clientId);
+            params.append('name', newName);
+            fetch('{{ url_for('change_name') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params.toString()
+            }).then(function() {
+                window.location.reload();
+            });
+        }
 
     </script>
 </body>
