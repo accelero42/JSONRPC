@@ -31,10 +31,14 @@ class SnapcastRPCClient:
             payload["params"] = params
         logging.debug("Sending RPC payload: %s", payload)
         try:
+            logging.debug("Connecting to Snapcast server at %s", self.url)
             ws = websocket.create_connection(self.url, timeout=self.timeout)
+            logging.debug("Connection established")
             ws.send(json.dumps(payload))
+            logging.debug("Payload sent, waiting for response")
             ws.settimeout(self.timeout)
             response = ws.recv()
+            logging.debug("Raw response: %s", response)
         except websocket.WebSocketException as exc:
             raise RuntimeError(f"RPC request failed: {exc}") from exc
         finally:
