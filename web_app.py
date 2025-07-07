@@ -58,11 +58,19 @@ def index():
         if isinstance(artist, list):
             artist = ", ".join(artist)
         album = metadata.get('album')
+        art_url = metadata.get('artUrl')
+        art_data = metadata.get('artData', {})
+
         stream['title'] = title
         stream['artist'] = artist
         stream['album'] = album
         stream['current_song'] = title
-        if artist and album:
+
+        if art_url:
+            stream['album_art'] = art_url
+        elif art_data.get('data') and art_data.get('extension'):
+            stream['album_art'] = f"data:image/{art_data['extension']};base64,{art_data['data']}"
+        elif artist and album:
             stream['album_art'] = fetch_album_art(artist, album)
         else:
             stream['album_art'] = None
