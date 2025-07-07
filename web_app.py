@@ -73,6 +73,7 @@ def index():
         art_url = metadata.get('artUrl')
         art_data = metadata.get('artData', {})
 
+        stream['raw_metadata'] = json.dumps(metadata, indent=2)
         stream['title'] = title
         stream['artist'] = artist
         stream['album'] = album
