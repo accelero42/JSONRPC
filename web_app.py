@@ -16,6 +16,10 @@ def index():
         return f'Error fetching status: {exc}', 500
 
     streams = status.get('server', {}).get('streams', [])
+    for stream in streams:
+        metadata = stream.get('metadata', {})
+        song = metadata.get('title') or metadata.get('name') or metadata.get('file', '')
+        stream['current_song'] = song
     groups = status.get('server', {}).get('groups', [])
 
     # Flatten clients with group, stream and volume info
