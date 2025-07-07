@@ -1,112 +1,23 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import os
 import json
-import urllib.parse
-import urllib.request
-import logging
 from snapcast_client import SnapcastRPCClient
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-log_level = os.environ.get("LOG_LEVEL", "DEBUG").upper()
-logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s %(levelname)s: %(message)s'
-)
 
 client = SnapcastRPCClient()
-
-album_art_cache = {}
-
-
-def fetch_album_art(artist, album):
-    key = (artist, album)
-    if key in album_art_cache:
-        logging.debug("Album art cache hit for %s - %s", artist, album)
-        return album_art_cache[key]
-    try:
-        logging.info("Fetching album art for %s - %s", artist, album)
-        search_url = (
-            "https://musicbrainz.org/ws/2/release/?query=artist:%s%%20AND%%20release:%s&fmt=json&limit=1"
-            % (urllib.parse.quote(artist), urllib.parse.quote(album))
-        )
-        logging.debug("Album art search URL: %s", search_url)
-        req = urllib.request.Request(
-            search_url,
-            headers={"User-Agent": "AudioBrane/1.0 (contact@example.com)"},
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.load(resp)
-        logging.debug("MusicBrainz response for %s - %s: %s", artist, album, data)
-        if not data.get("releases"):
-            logging.warning("No releases found for %s - %s", artist, album)
-            album_art_cache[key] = None
-            return None
-        release_id = data["releases"][0]["id"]
-        logging.debug("Found release ID %s for %s - %s", release_id, artist, album)
-        cover_url = f"https://coverartarchive.org/release/{release_id}/front-250"
-        logging.debug("Using cover art URL %s", cover_url)
-        album_art_cache[key] = cover_url
-        return cover_url
-    except Exception as exc:
-        logging.warning("Failed to fetch album art for %s - %s: %s", artist, album, exc)
-        album_art_cache[key] = None
-        return None
 
 @app.route('/')
 def index():
     show_disconnected = request.args.get('show_disconnected') == '1'
     try:
-        logging.info("Fetching Snapcast status")
-        logging.debug("Calling Server.GetStatus via RPC")
         status = client.call('Server.GetStatus')
-        logging.debug("Snapcast status: %s", status)
     except Exception as exc:
         return f'Error fetching status: {exc}', 500
 
     streams = status.get('server', {}).get('streams', [])
-    logging.debug("Streams data returned: %s", streams)
-    for stream in streams:
-        logging.info("Processing stream %s", stream.get('id'))
-        metadata = stream.get('metadata', {})
-        logging.debug("Raw metadata for %s: %s", stream.get('id'), metadata)
-        title = metadata.get('title') or metadata.get('name') or metadata.get('file', '')
-        artist = metadata.get('artist')
-        if isinstance(artist, list):
-            artist = ", ".join(artist)
-        album = metadata.get('album')
-        art_url = metadata.get('artUrl')
-        art_data = metadata.get('artData', {})
-
-        stream['raw_metadata'] = json.dumps(metadata, indent=2)
-        stream['title'] = title
-        stream['artist'] = artist
-        stream['album'] = album
-        stream['current_song'] = title
-
-        if art_url:
-            logging.debug("Using provided artUrl for %s: %s", stream.get('id'), art_url)
-            stream['album_art'] = art_url
-        elif art_data.get('data') and art_data.get('extension'):
-            logging.debug(
-                "Using embedded artData for %s (extension %s)",
-                stream.get('id'),
-                art_data.get('extension'),
-            )
-            stream['album_art'] = f"data:image/{art_data['extension']};base64,{art_data['data']}"
-        elif artist and album:
-            logging.debug(
-                "Trying to fetch album art for %s from external service using artist '%s' and album '%s'",
-                stream.get('id'),
-                artist,
-                album,
-            )
-            stream['album_art'] = fetch_album_art(artist, album)
-        else:
-            logging.debug("No album art available for %s", stream.get('id'))
-            stream['album_art'] = None
     groups = status.get('server', {}).get('groups', [])
-    logging.debug("Groups data returned: %s", groups)
 
     # Flatten clients with group, stream and volume info
     clients = []
@@ -119,21 +30,15 @@ def index():
                 continue
             name = c.get('config', {}).get('name') or c.get('host', {}).get('name') or c.get('id')
             volume_cfg = c.get('config', {}).get('volume', {})
-            client_info = {
-                'id': c.get('id'),
-                'name': name,
-                'group_id': group_id,
-                'stream_id': stream_id,
-                'volume_percent': volume_cfg.get('percent'),
-                'volume_muted': volume_cfg.get('muted'),
-            }
-            clients.append(client_info)
-            logging.debug(
-                "Added client %s to list with group %s and stream %s",
-                client_info['id'],
-                group_id,
-                stream_id,
-            )
+        client_info = {
+            'id': c.get('id'),
+            'name': name,
+            'group_id': group_id,
+            'stream_id': stream_id,
+            'volume_percent': volume_cfg.get('percent'),
+            'volume_muted': volume_cfg.get('muted'),
+        }
+        clients.append(client_info)
     return render_template('index.html', clients=clients, streams=streams, show_disconnected=show_disconnected)
 
 @app.route('/change_stream', methods=['POST'])

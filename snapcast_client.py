@@ -1,6 +1,5 @@
 import json
 import os
-import logging
 import websocket
 
 class SnapcastRPCClient:
@@ -29,16 +28,11 @@ class SnapcastRPCClient:
         }
         if params is not None:
             payload["params"] = params
-        logging.debug("Sending RPC payload: %s", payload)
         try:
-            logging.debug("Connecting to Snapcast server at %s", self.url)
             ws = websocket.create_connection(self.url, timeout=self.timeout)
-            logging.debug("Connection established")
             ws.send(json.dumps(payload))
-            logging.debug("Payload sent, waiting for response")
             ws.settimeout(self.timeout)
             response = ws.recv()
-            logging.debug("Raw response: %s", response)
         except websocket.WebSocketException as exc:
             raise RuntimeError(f"RPC request failed: {exc}") from exc
         finally:
@@ -50,7 +44,6 @@ class SnapcastRPCClient:
             data = json.loads(response)
         except json.JSONDecodeError as exc:
             raise RuntimeError("Invalid JSON response") from exc
-        logging.debug("RPC response: %s", data)
         if "error" in data:
             raise RuntimeError(f"RPC error: {data['error']}")
         return data.get("result")
