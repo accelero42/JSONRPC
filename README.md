@@ -10,7 +10,11 @@ This repository contains a simple Python client for the Snapcast JSON-RPC contro
 
 ## Command Line Usage
 
-The script `snapcast_client.py` connects to the Snapcast server at `192.168.1.70` on port `1780` and calls `Server.GetStatus` via HTTP JSON-RPC. The resulting JSON is printed to the console.
+The script `snapcast_client.py` connects to the Snapcast server (defaults to
+`192.168.1.70:1780`) and calls `Server.GetStatus` via HTTP JSON-RPC.  Host,
+port and request timeout can be changed with the environment variables
+`SNAPCAST_HOST`, `SNAPCAST_PORT` and `SNAPCAST_TIMEOUT` respectively.
+The resulting JSON is printed to the console.
 
 ```bash
 python3 snapcast_client.py
@@ -20,7 +24,16 @@ If the server is unreachable or returns an error, an error message will be print
 
 ## Web Interface
 
-Run the Flask application to view connected clients and change their streams:
+Run the Flask application to view connected clients and change their streams.
+The same environment variables used by ``snapcast_client.py`` can be set to
+point the web interface at a different Snapcast server or to adjust the
+request timeout. Example:
+
+```bash
+SNAPCAST_HOST=192.168.1.50 SNAPCAST_TIMEOUT=15 python3 web_app.py
+```
+
+Or simply:
 
 ```bash
 python3 web_app.py
