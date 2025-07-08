@@ -44,3 +44,17 @@ Visit `http://localhost:5000` in your browser. The page lists all clients with i
 The interface, now titled **AudioBrane**, features a simple illustration of a brain with musical notes. A checkbox lets you hide clients that are not connected. The streams table lists each stream with its current status and the song that is playing.
 
 The API reference is available at <https://github.com/badaix/snapcast/blob/develop/doc/json_rpc_api/control.md>.
+
+## Hardware Controller
+
+`controller.py` listens for a rotary encoder on GPIO 23/24 and a push button on GPIO 25 using `gpiozero`. On each detent the volume of the configured client is adjusted by 5%. Pressing the button cycles the client's group through the available streams.
+
+Save the target client ID in `client_id.txt` (or set `SNAPCAST_CLIENT_ID`).
+
+To run this controller automatically with systemd, install `controller.service` and update the paths:
+
+```bash
+sudo cp controller.service /etc/systemd/system/controller.service
+sudo systemctl enable controller.service
+sudo systemctl start controller.service
+```
