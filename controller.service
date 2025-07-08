@@ -1,0 +1,13 @@
+[Unit]
+Description=Snapcast Rotary Controller
+After=network.target
+
+[Service]
+Type=simple
+# Update ExecStart and WorkingDirectory with the correct paths
+ExecStart=/usr/bin/python3 /path/to/controller.py
+WorkingDirectory=/path/to
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
