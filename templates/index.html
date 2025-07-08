@@ -6,96 +6,20 @@
     <style>
         body {
             font-family: "Segoe UI", Tahoma, sans-serif;
-            background: #f9f9f9;
-            color: #333;
-            margin: 0;
             padding: 20px;
         }
-
-        h1 {
-            margin-top: 0;
-        }
-
         .logo {
             position: relative;
             display: inline-block;
             margin-bottom: 20px;
         }
-
-        .logo img.brain {
-            width: 80px;
-            height: auto;
-        }
-
+        .logo img.brain { width: 80px; }
         .logo img.notes {
             position: absolute;
             top: -10px;
             right: -10px;
             width: 40px;
-            height: auto;
         }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background: white;
-        }
-
-        th, td {
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-        }
-
-        th {
-            background: #f0f0f0;
-            text-align: left;
-        }
-
-
-        .volume-slider {
-            width: 120px;
-        }
-
-        .settings {
-            margin-bottom: 20px;
-        }
-
-        .stream-buttons button {
-            margin: 2px;
-        }
-
-        .stream-buttons button.selected {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .rename-icon {
-            cursor: pointer;
-            margin-left: 6px;
-        }
-
-        #renameModal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-        }
-
-        #renameModal .modal-content {
-            background: #fff;
-            padding: 20px;
-            max-width: 300px;
-            margin: 100px auto;
-            border-radius: 4px;
-        }
-
-        #renameModal button {
-            margin-right: 5px;
-        }
-
     </style>
 </head>
 <body>
@@ -104,12 +28,6 @@
         <img class="notes" src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f3b5.svg" alt="music notes">
     </div>
     <h1>AudioBrane</h1>
-    <form class="settings" method="get">
-        <label>
-            <input type="checkbox" name="show_disconnected" value="1" {% if show_disconnected %}checked{% endif %}> Show disconnected clients
-        </label>
-        <button type="submit">Apply</button>
-    </form>
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <ul>
@@ -119,113 +37,14 @@
         </ul>
       {% endif %}
     {% endwith %}
-    <table border="1" cellpadding="5" cellspacing="0">
-        <tr>
-            <th>Client</th>
-            <th>Change Stream</th>
-            <th>Volume</th>
-        </tr>
-        {% for client in clients %}
-        <tr>
-            <td>
-                {{ client.name }}
-                <span class="rename-icon" title="Rename"
-                      onclick="openRenameModal({{ client.id|tojson }}, {{ client.name|tojson }})">&#x270E;</span>
-            </td>
-            <td class="stream-buttons">
-                <form action="{{ url_for('change_stream') }}" method="post">
-                    <input type="hidden" name="group_id" value="{{ client.group_id }}">
-                    {% for stream in streams %}
-                        <button type="submit" name="stream_id" value="{{ stream.id }}" class="{% if stream.id == client.stream_id %}selected{% endif %}">{{ stream.id }}</button>
-                    {% endfor %}
-                </form>
-            </td>
-            <td>
-                <input type="range" min="0" max="100" step="1" class="volume-slider" data-client="{{ client.id }}" value="{% if client.volume_muted %}0{% else %}{{ client.volume_percent }}{% endif %}">
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-
-    <div id="renameModal">
-        <div class="modal-content">
-            <label>New name:
-                <input type="text" id="renameInput">
-            </label>
-            <div>
-                <button type="button" id="renameSave">Save</button>
-                <button type="button" onclick="closeRenameModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-
-
-    <script>
-        document.querySelectorAll('.volume-slider').forEach(function(slider) {
-            var clientId = slider.dataset.client;
-            var postUrl = '{{ url_for('set_volume') }}';
-            function sendVolume() {
-                var params = new URLSearchParams();
-                params.append('client_id', clientId);
-                params.append('volume', slider.value);
-                fetch(postUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: params.toString()
-                }).then(function() {
-                    window.location.reload();
-                });
-            }
-            slider.addEventListener('mouseup', sendVolume);
-            slider.addEventListener('touchend', sendVolume);
-        });
-
-        var renameModal = document.getElementById('renameModal');
-        var renameInput = document.getElementById('renameInput');
-        var renameSave = document.getElementById('renameSave');
-        var renameClientId = null;
-
-        function openRenameModal(clientId, currentName) {
-            renameClientId = clientId;
-            renameInput.value = currentName;
-            renameModal.style.display = 'block';
-            renameInput.focus();
-        }
-
-        function closeRenameModal() {
-            renameModal.style.display = 'none';
-        }
-
-        function saveRename() {
-            var newName = renameInput.value;
-            if (renameClientId === null) {
-                closeRenameModal();
-                return;
-            }
-            var params = new URLSearchParams();
-            params.append('client_id', renameClientId);
-            params.append('name', newName);
-            fetch('{{ url_for('change_name') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: params.toString()
-            }).then(function() {
-                window.location.reload();
-            });
-        }
-
-        renameSave.addEventListener('click', saveRename);
-        renameInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                saveRename();
-            }
-        });
-
-    </script>
+    <form action="{{ url_for('save_selection') }}" method="post">
+        <label for="clientSelect">Select client:</label>
+        <select name="client_id" id="clientSelect">
+            {% for client in clients %}
+            <option value="{{ client.id }}" {% if client.id == selected %}selected{% endif %}>{{ client.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Save</button>
+    </form>
 </body>
 </html>
