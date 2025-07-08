@@ -4,7 +4,7 @@ import json
 from gpiozero import RotaryEncoder, Button
 from snapcast_client import SnapcastRPCClient
 
-CLIENT_ID_FILE = os.environ.get("SNAPCAST_CLIENT_ID_FILE", "selected_client.json")
+CLIENT_ID_FILE = os.environ.get("SNAPCAST_CLIENT_ID_FILE", "/home/audiobrane/selected_client.json")
 VOLUME_STEP = int(os.environ.get("VOLUME_STEP", 5))
 
 class Controller:
