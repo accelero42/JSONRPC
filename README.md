@@ -49,7 +49,10 @@ The API reference is available at <https://github.com/badaix/snapcast/blob/devel
 
 `controller.py` listens for a rotary encoder on GPIO 23/24 and a push button on GPIO 25 using `gpiozero`. On each detent the volume of the configured client is adjusted by 5%. Pressing the button cycles the client's group through the available streams.
 
-Save the target client ID in `client_id.txt` (or set `SNAPCAST_CLIENT_ID`).
+The controller reads the client ID from `selected_client.json` by default. This
+file is written by the web interface when you save a client selection. You can
+override the path with `SNAPCAST_CLIENT_ID_FILE` or provide the ID directly via
+`SNAPCAST_CLIENT_ID`.
 
 To run this controller automatically with systemd, install `controller.service` and update the paths:
 

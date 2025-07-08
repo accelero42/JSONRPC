@@ -1,9 +1,10 @@
 import os
 import time
+import json
 from gpiozero import RotaryEncoder, Button
 from snapcast_client import SnapcastRPCClient
 
-CLIENT_ID_FILE = os.environ.get("SNAPCAST_CLIENT_ID_FILE", "client_id.txt")
+CLIENT_ID_FILE = os.environ.get("SNAPCAST_CLIENT_ID_FILE", "selected_client.json")
 VOLUME_STEP = int(os.environ.get("VOLUME_STEP", 5))
 
 class Controller:
@@ -22,11 +23,19 @@ class Controller:
         if env_id:
             return env_id.strip()
         try:
-            with open(CLIENT_ID_FILE) as f:
+            with open(CLIENT_ID_FILE, "r", encoding="utf-8") as f:
+                if CLIENT_ID_FILE.endswith(".json"):
+                    data = json.load(f)
+                    cid = data.get("id")
+                    if cid:
+                        return str(cid).strip()
+                    raise ValueError("Missing 'id' field")
                 return f.read().strip()
         except FileNotFoundError:
             raise RuntimeError(
                 f"Client ID not found. Set SNAPCAST_CLIENT_ID or create {CLIENT_ID_FILE}")
+        except Exception as exc:
+            raise RuntimeError(f"Failed to load client id from {CLIENT_ID_FILE}: {exc}") from exc
 
     def get_status(self):
         return self.client.call("Server.GetStatus")
